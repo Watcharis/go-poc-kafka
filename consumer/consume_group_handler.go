@@ -67,6 +67,8 @@ func (cgh *ConsumerGroup) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 			case KAFKA_TOPIC_POC_2:
 				fmt.Println("service topic :", message.Topic)
 
+				session.MarkMessage(message, "")
+
 			default:
 				errMsg := errors.New(fmt.Sprintf("consume message not found topic : %s", message.Topic))
 				log.Printf("not service process for topic: %s, err : %s", message.Topic, errMsg)
