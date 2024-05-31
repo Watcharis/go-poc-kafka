@@ -6,8 +6,10 @@ import (
 	"log"
 	"sync"
 	"watcharis/go-poc-kafka/handlers"
+	"watcharis/go-poc-kafka/logger"
 
 	"github.com/IBM/sarama"
+	"go.uber.org/zap"
 )
 
 const (
@@ -33,7 +35,7 @@ func NewKafkaConsumerGroup(ctx context.Context, processorKafkaTopicHanlers handl
 	if err != nil {
 		log.Panicf("Error parsing Kafka version: %v", err)
 	}
-	log.Println("version :", version)
+	logger.Info("parsing kafka version", zap.String("version", version.String()))
 
 	config := sarama.NewConfig()
 	config.Version = version
@@ -48,7 +50,7 @@ func NewKafkaConsumerGroup(ctx context.Context, processorKafkaTopicHanlers handl
 	default:
 		log.Panicf("Unrecognized consumer group partition assignor: %s", assignor)
 	}
-	log.Println("assignor :", assignor)
+	logger.Info("consumer-group reblance strategy", zap.String("assignor", assignor))
 
 	addr := []string{KAFKA_ADDRESS}
 
@@ -78,7 +80,7 @@ func NewKafkaConsumerGroup(ctx context.Context, processorKafkaTopicHanlers handl
 
 			err := group.Consume(ctx, topics, &consumer)
 			if err != nil {
-				log.Println("[ERROR] cannot consuner message err :", err)
+				logger.Error("cannot consume message", zap.Error(err))
 				errCH <- err
 				return
 			}
@@ -95,11 +97,11 @@ func NewKafkaConsumerGroup(ctx context.Context, processorKafkaTopicHanlers handl
 
 	go func() {
 		<-consumer.ready // Await till the consumer has been set up
-		log.Println("Sarama consumer up and running!...")
+		logger.Info("Sarama consumer up and running!...")
 	}()
 
 	if consumerError := <-errCH; consumerError != nil {
-		log.Println("consumerError :", consumerError)
+		logger.Info("consumer error", zap.Error(consumerError))
 		return consumerError
 	}
 

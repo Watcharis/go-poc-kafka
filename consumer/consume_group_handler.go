@@ -1,12 +1,12 @@
 package consumer
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"watcharis/go-poc-kafka/handlers"
+	"watcharis/go-poc-kafka/logger"
 
 	"github.com/IBM/sarama"
+	"go.uber.org/zap"
 )
 
 type ConsumerGroupHandler interface {
@@ -28,9 +28,10 @@ type ConsumerGroup struct {
 	processorKafkaTopicHanlers handlers.KafkaConsumerHandlers
 }
 
-func NewCosumerGroupHabler(ready chan bool) *ConsumerGroup {
+func NewCosumerGroupHabler(ready chan bool, processorKafkaTopicHanlers handlers.KafkaConsumerHandlers) *ConsumerGroup {
 	return &ConsumerGroup{
-		ready: ready,
+		ready:                      ready,
+		processorKafkaTopicHanlers: processorKafkaTopicHanlers,
 	}
 }
 
@@ -49,30 +50,30 @@ func (cgh *ConsumerGroup) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 		case message, ok := <-claim.Messages():
 
 			if !ok {
-				log.Printf("message channel was closed")
+				logger.Info("message channel was closed")
 				return nil
 			}
 
-			log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s partition = %d", string(message.Value), message.Timestamp, message.Topic, message.Partition)
+			logger.Info("claimed message", zap.String("value", string(message.Value)), zap.Time("timestamp", message.Timestamp),
+				zap.String("topic", message.Topic), zap.Int("partition", int(message.Partition)))
 
 			switch topic := message.Topic; topic {
 			case KAFKA_TOPIC_POC_1:
 				if err := cgh.processorKafkaTopicHanlers.ProcessorKafkaPocTopicFirstHanlder(session.Context(), message); err != nil {
-					log.Printf("[ERROR] ProcessorKafkaPocTopicFirstHanlder - handler error : %+v\n", err)
+					logger.Error("ProcessorKafkaPocTopicFirstHanlder - handler error", zap.Error(err))
 					return err
 				}
 
 				session.MarkMessage(message, "")
-
 			case KAFKA_TOPIC_POC_2:
 				fmt.Println("service topic :", message.Topic)
 
 				session.MarkMessage(message, "")
 
 			default:
-				errMsg := errors.New(fmt.Sprintf("consume message not found topic : %s", message.Topic))
-				log.Printf("not service process for topic: %s, err : %s", message.Topic, errMsg)
-				return errMsg
+				err := fmt.Errorf("consume message not found topic : %s", message.Topic)
+				logger.Error(fmt.Sprintf("not service process for topic: %s", message.Topic), zap.Error(err))
+				return err
 			}
 
 		case <-session.Context().Done():

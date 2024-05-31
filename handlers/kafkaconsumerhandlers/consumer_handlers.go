@@ -3,12 +3,13 @@ package kafkaconsumerhandlers
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"watcharis/go-poc-kafka/handlers"
+	"watcharis/go-poc-kafka/logger"
 	"watcharis/go-poc-kafka/models"
 	"watcharis/go-poc-kafka/services"
 
 	"github.com/IBM/sarama"
+	"go.uber.org/zap"
 )
 
 type kafkaConsumerHandlers struct {
@@ -22,15 +23,18 @@ func NewKafkaConsumerHandlers(processorKafkaTopicService services.ProcessorKafka
 }
 
 func (h *kafkaConsumerHandlers) ProcessorKafkaPocTopicFirstHanlder(ctx context.Context, message *sarama.ConsumerMessage) error {
+	logger.Info("ProcessorKafkaPocTopicFirstHanlder - start handler")
 
 	var messageTopicFirst models.MessageKafkaPocTopicFirst
 	if err := json.Unmarshal(message.Value, &messageTopicFirst); err != nil {
-		log.Printf("[ERROR] cannot json.Unmarshal message kafka topic = %s, meesgae = %+v, error : %+v\n", message.Topic, string(message.Value), err)
+		logger.Errorf("ProcessorKafkaPocTopicFirst - cannot json.Unmarshal message kafka topic = %s, meesgae = %+v",
+			logger.SugerArgs(message.Topic, string(message.Value)),
+			logger.ZapCoreFileds(zap.Error(err)))
 		return err
 	}
 
 	if err := h.processorKafkaTopicService.ProcessorKafkaPocTopicFirst(ctx, messageTopicFirst); err != nil {
-		log.Printf("[ERROR] ProcessorKafkaPocTopicFirst - service error : %+v\n", err)
+		logger.Error("ProcessorKafkaPocTopicFirst - service error", zap.Error(err))
 		return err
 	}
 
