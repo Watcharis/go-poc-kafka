@@ -1,8 +1,6 @@
 module watcharis/go-poc-kafka
 
-go 1.21
-
-toolchain go1.22.3
+go 1.23
 
 require (
 	github.com/IBM/sarama v1.43.2
