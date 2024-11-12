@@ -73,3 +73,7 @@ func Warnf(template string, args []interface{}, zapFileds []zapcore.Field) {
 func Fatal(msg string, fields ...zapcore.Field) {
 	logger.Fatal(msg, fields...)
 }
+
+func Panic(msg string, fields ...zapcore.Field) {
+	logger.Panic(msg, fields...)
+}

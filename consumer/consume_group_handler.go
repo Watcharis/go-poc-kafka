@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"fmt"
+	"watcharis/go-poc-kafka/config"
 	"watcharis/go-poc-kafka/handlers"
 	"watcharis/go-poc-kafka/logger"
 
@@ -26,12 +27,14 @@ type ConsumerGroupHandler interface {
 type ConsumerGroup struct {
 	ready                      chan bool
 	processorKafkaTopicHanlers handlers.KafkaConsumerHandlers
+	cfg                        config.Config
 }
 
-func NewCosumerGroupHabler(ready chan bool, processorKafkaTopicHanlers handlers.KafkaConsumerHandlers) *ConsumerGroup {
+func NewCosumerGroupHabler(ready chan bool, processorKafkaTopicHanlers handlers.KafkaConsumerHandlers, cfg config.Config) *ConsumerGroup {
 	return &ConsumerGroup{
 		ready:                      ready,
 		processorKafkaTopicHanlers: processorKafkaTopicHanlers,
+		cfg:                        cfg,
 	}
 }
 
@@ -58,14 +61,14 @@ func (cgh *ConsumerGroup) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 				zap.String("topic", message.Topic), zap.Int("partition", int(message.Partition)))
 
 			switch topic := message.Topic; topic {
-			case KAFKA_TOPIC_POC_1:
+			case cgh.cfg.Kafka.Topic1:
 				if err := cgh.processorKafkaTopicHanlers.ProcessorKafkaPocTopicFirstHanlder(session.Context(), message); err != nil {
 					logger.Error("ProcessorKafkaPocTopicFirstHanlder - handler error", zap.Error(err))
 					return err
 				}
 
 				session.MarkMessage(message, "")
-			case KAFKA_TOPIC_POC_2:
+			case cgh.cfg.Kafka.Topic2:
 				fmt.Println("service topic :", message.Topic)
 
 				session.MarkMessage(message, "")

@@ -1,0 +1,7 @@
+kafka:
+  consumer-group: kafka-poc-group-1
+  topic-poc-kafka-1: kafka-poc-topic-1
+  topic-poc-kafka-2: kafka-poc-topic-2
+
+secert:
+  kafka-address: ["localhost:9092"]

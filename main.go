@@ -9,12 +9,14 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"watcharis/go-poc-kafka/config"
 	"watcharis/go-poc-kafka/consumer"
-	"watcharis/go-poc-kafka/handlers/kafkaconsumerhandlers"
+	"watcharis/go-poc-kafka/handlers/consumers"
 	"watcharis/go-poc-kafka/logger"
 	"watcharis/go-poc-kafka/services"
 
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -27,23 +29,26 @@ func main() {
 
 	logger.Info("initial logger success", zap.String("log-status", "ok"))
 
+	cfg := config.LoadConfig("./config")
+	logger.Info("app load config success", zap.Any("cfg", cfg))
+
 	// init elasticsearch
-	_, err := initElasticsearch()
-	if err != nil {
-		log.Panicf("[ERROR] cannot connect elastic err : %+v\n", err)
-	}
+	// _, err := initElasticsearch()
+	// if err != nil {
+	// 	log.Panicf("[ERROR] cannot connect elastic err : %+v\n", err)
+	// }
 
 	//init kafka services
 	processorKafkaTopicService := services.NewProcessorKafkaTopic()
 
 	//init kafka handler
-	processorKafkaTopicHandlers := kafkaconsumerhandlers.NewKafkaConsumerHandlers(processorKafkaTopicService)
+	processorKafkaTopicHandlers := consumers.NewKafkaConsumerHandlers(processorKafkaTopicService)
 
 	//init kafka consumer group
 	wg := new(sync.WaitGroup)
 	go func(ctx context.Context) {
 		logger.Info("start kafka consumer ...")
-		if err := consumer.NewKafkaConsumerGroup(ctx, processorKafkaTopicHandlers); err != nil {
+		if err := consumer.NewKafkaConsumerGroup(ctx, processorKafkaTopicHandlers, *cfg); err != nil {
 			log.Panicf("[ERROR] kafka consumer group error : %+v\n", err)
 		}
 	}(ctx)
@@ -63,6 +68,9 @@ func main() {
 }
 
 func initElasticsearch() (*elasticsearch.Client, error) {
+
+	address := viper.GetStringSlice("secert.kafka-address")
+	fmt.Println("address :", address)
 
 	cfg := elasticsearch.Config{
 		Addresses: []string{"http://localhost:9200"},

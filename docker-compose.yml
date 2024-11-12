@@ -2,8 +2,8 @@ version: "3.8"
 services: 
   kafka0:
     hostname: kafka0
-    container_name: kafka0
     image: 'bitnami/kafka:3.6'
+    container_name: kafka0
     ports:
       - '9092:9092'
     environment:
@@ -23,14 +23,14 @@ services:
     restart: unless-stopped
 
   kafka-ui:
-    depends_on:
-      - kafka0
-    container_name: kafka-ui
     image: 'provectuslabs/kafka-ui:latest'
+    container_name: kafka-ui
     ports:
       - "8080:8080"
     environment:
       DYNAMIC_CONFIG_ENABLED: 'true'
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka0:29092
+    depends_on:
+      - kafka0
     restart: unless-stopped

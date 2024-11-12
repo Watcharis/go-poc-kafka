@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"sync"
+	"watcharis/go-poc-kafka/config"
 	"watcharis/go-poc-kafka/handlers"
 	"watcharis/go-poc-kafka/logger"
 
@@ -29,7 +30,7 @@ func init() {
 	flag.StringVar(&version, "version", sarama.DefaultVersion.String(), "Kafka cluster version")
 }
 
-func NewKafkaConsumerGroup(ctx context.Context, processorKafkaTopicHanlers handlers.KafkaConsumerHandlers) error {
+func NewKafkaConsumerGroup(ctx context.Context, processorKafkaTopicHanlers handlers.KafkaConsumerHandlers, cfg config.Config) error {
 
 	version, err := sarama.ParseKafkaVersion(version)
 	if err != nil {
@@ -52,7 +53,8 @@ func NewKafkaConsumerGroup(ctx context.Context, processorKafkaTopicHanlers handl
 	}
 	logger.Info("consumer-group reblance strategy", zap.String("assignor", assignor))
 
-	addr := []string{KAFKA_ADDRESS}
+	// addr := []string{KAFKA_ADDRESS}
+	addr := cfg.Secert.KafkaAddress
 
 	group, err := sarama.NewConsumerGroup(addr, GROUP_KAFKA_POC_1, config)
 	if err != nil {
@@ -63,6 +65,7 @@ func NewKafkaConsumerGroup(ctx context.Context, processorKafkaTopicHanlers handl
 	consumer := ConsumerGroup{
 		ready:                      make(chan bool),
 		processorKafkaTopicHanlers: processorKafkaTopicHanlers,
+		cfg:                        cfg,
 	}
 	// consumer := NewCosumerGroupHabler(make(chan bool))
 
@@ -75,7 +78,7 @@ func NewKafkaConsumerGroup(ctx context.Context, processorKafkaTopicHanlers handl
 			wg.Done()
 		}()
 		for {
-			topics := []string{KAFKA_TOPIC_POC_1, KAFKA_TOPIC_POC_2}
+			topics := []string{cfg.Kafka.Topic1, cfg.Kafka.Topic2}
 			// topics = nil
 
 			err := group.Consume(ctx, topics, &consumer)

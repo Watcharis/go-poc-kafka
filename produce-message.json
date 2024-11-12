@@ -1,12 +1,12 @@
 [
     {
         "name": "mondly.wong",
-        "topic": "kafka-poc-topic-1",
+        "title": "kafka-poc-topic-1",
         "description": "test send message"
     },
     {
         "name": "mondly.wong",
-        "topic": "kafka-poc-topic-2",
+        "title": "kafka-poc-topic-2",
         "description": "test send message"
     }
 ]

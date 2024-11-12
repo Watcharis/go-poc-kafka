@@ -2,6 +2,6 @@ package models
 
 type MessageKafkaPocTopicFirst struct {
 	Name        string `json:"name"`
-	Topic       string `json:"topic"`
+	Title       string `json:"title"`
 	Description string `json:"description"`
 }
