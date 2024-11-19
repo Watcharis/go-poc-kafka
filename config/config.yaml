@@ -3,5 +3,8 @@ kafka:
   topic-poc-kafka-1: kafka-poc-topic-1
   topic-poc-kafka-2: kafka-poc-topic-2
 
-secert:
+secerts:
   kafka-address: ["localhost:9092"]
+  elastic-address: http://localhost:9200
+  redis-address: ""
+

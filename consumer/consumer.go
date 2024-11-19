@@ -13,13 +13,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	KAFKA_ADDRESS     = "localhost:9092"
-	GROUP_KAFKA_POC_1 = "kafka-poc-group-1"
-	KAFKA_TOPIC_POC_1 = "kafka-poc-topic-1"
-	KAFKA_TOPIC_POC_2 = "kafka-poc-topic-2"
-)
-
 var (
 	version  = ""
 	assignor = ""
@@ -54,9 +47,9 @@ func NewKafkaConsumerGroup(ctx context.Context, processorKafkaTopicHanlers handl
 	logger.Info("consumer-group reblance strategy", zap.String("assignor", assignor))
 
 	// addr := []string{KAFKA_ADDRESS}
-	addr := cfg.Secert.KafkaAddress
+	addr := cfg.Secerts.KafkaAddress
 
-	group, err := sarama.NewConsumerGroup(addr, GROUP_KAFKA_POC_1, config)
+	group, err := sarama.NewConsumerGroup(addr, cfg.Kafka.ConsumerGroup, config)
 	if err != nil {
 		log.Println("[Error] cannot start consumer group err :", err)
 		return err
@@ -78,8 +71,8 @@ func NewKafkaConsumerGroup(ctx context.Context, processorKafkaTopicHanlers handl
 			wg.Done()
 		}()
 		for {
-			topics := []string{cfg.Kafka.Topic1, cfg.Kafka.Topic2}
 			// topics = nil
+			topics := []string{cfg.Kafka.Topic1, cfg.Kafka.Topic2}
 
 			err := group.Consume(ctx, topics, &consumer)
 			if err != nil {

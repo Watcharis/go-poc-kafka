@@ -1,6 +1,9 @@
 package config
 
 import (
+	"fmt"
+	"os"
+	"strings"
 	"sync"
 	"watcharis/go-poc-kafka/logger"
 
@@ -8,8 +11,8 @@ import (
 )
 
 type Config struct {
-	Kafka  Kafka  `mapstructure:"kafka"`
-	Secert Secert `mapstructure:"secert"`
+	Kafka   Kafka   `mapstructure:"kafka"`
+	Secerts Secerts `mapstructure:"secerts"`
 }
 
 type Kafka struct {
@@ -18,8 +21,10 @@ type Kafka struct {
 	Topic2        string `mapstructure:"topic-poc-kafka-2"`
 }
 
-type Secert struct {
-	KafkaAddress []string `mapstructure:"kafka-address"`
+type Secerts struct {
+	KafkaAddress   []string `mapstructure:"kafka-address"`
+	ElasticAddress string   `mapstructure:"elastic-address"`
+	RedisAddress   string   `mapstructure:"redis-address"`
 }
 
 func LoadConfig(path string) *Config {
@@ -36,14 +41,36 @@ func LoadConfig(path string) *Config {
 
 		viper.AutomaticEnv()
 
-		err := viper.ReadInConfig()
-		if err != nil {
+		if err := viper.ReadInConfig(); err != nil {
 			logger.Panic(err.Error())
 		}
-		if err = viper.Unmarshal(&config); err != nil {
+
+		GetSecretValue()
+
+		if err := viper.MergeConfig(strings.NewReader(viper.GetString("config"))); err != nil {
+			logger.Panic(err.Error())
+		}
+
+		if err := viper.Unmarshal(&config); err != nil {
 			logger.Panic(err.Error())
 		}
 	})
 
 	return &config
+}
+
+func GetSecretValue() {
+	for _, value := range os.Environ() {
+		fmt.Println("env value :", value)
+		pair := strings.SplitN(value, "=", 2)
+		if strings.Contains(pair[0], "SECRET_") {
+			keys := strings.Replace(pair[0], "SECRET_", "secrets.", -1)
+			fmt.Println("keys :", keys)
+			keys = strings.Replace(keys, "_", "-", -1)
+			fmt.Println("keys :", keys)
+			newKey := strings.Trim(keys, " ")
+			newValue := strings.Trim(pair[1], " ")
+			viper.Set(newKey, newValue)
+		}
+	}
 }

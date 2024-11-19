@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"watcharis/go-poc-kafka/config"
@@ -16,7 +17,6 @@ import (
 	"watcharis/go-poc-kafka/services"
 
 	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -33,10 +33,10 @@ func main() {
 	logger.Info("app load config success", zap.Any("cfg", cfg))
 
 	// init elasticsearch
-	// _, err := initElasticsearch()
-	// if err != nil {
-	// 	log.Panicf("[ERROR] cannot connect elastic err : %+v\n", err)
-	// }
+	_, err := initElasticsearch(*cfg)
+	if err != nil {
+		log.Panicf("[ERROR] cannot connect elastic err : %+v\n", err)
+	}
 
 	//init kafka services
 	processorKafkaTopicService := services.NewProcessorKafkaTopic()
@@ -67,18 +67,18 @@ func main() {
 	wg.Wait()
 }
 
-func initElasticsearch() (*elasticsearch.Client, error) {
+func initElasticsearch(cfg config.Config) (*elasticsearch.Client, error) {
 
-	address := viper.GetStringSlice("secert.kafka-address")
+	address := strings.Split(cfg.Secerts.ElasticAddress, ",")
 	fmt.Println("address :", address)
 
-	cfg := elasticsearch.Config{
-		Addresses: []string{"http://localhost:9200"},
+	elasticConfig := elasticsearch.Config{
+		Addresses: address,
 		Username:  "",
 		Password:  "",
 	}
 
-	es, err := elasticsearch.NewClient(cfg)
+	es, err := elasticsearch.NewClient(elasticConfig)
 	if err != nil {
 		return nil, err
 
@@ -94,7 +94,7 @@ func initElasticsearch() (*elasticsearch.Client, error) {
 	}
 
 	logger.Info("connect elasticsearch success",
-		zap.String("address", "http://localhost:9200"),
+		zap.Any("address", address),
 		zap.String("username", ""),
 		zap.String("password", ""))
 
